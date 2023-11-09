@@ -40,11 +40,6 @@ let (packed, image) = pxo::PackedSprite::pack_sprites(&[sprite_a, sprite_b], 204
 ```
 */
 
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
 use decompress::decompress;
 use image::RgbaImage;
 use images::load_images;
@@ -67,8 +62,10 @@ pub use pack::PackedFrame;
 #[cfg(feature = "pack")]
 pub use pack::PackedSprite;
 
-impl ReadExt for BufReader<File> {}
-impl ReadExt for BufReader<&[u8]> {}
+impl<T> ReadExt for T
+where
+    T: std::io::Read,
+{}
 
 #[cfg(feature = "sprite")]
 pub use sprite::Sprite;
@@ -93,9 +90,9 @@ pub struct Pxo {
 
 impl Pxo {
     /// Loads a [Pxo] from a file
-    pub fn load(file: File) -> Result<Pxo, PxoError> {
-        let mut reader = BufReader::new(file);
+    pub fn load(mut reader: impl std::io::Read + std::io::Seek) -> Result<Pxo, PxoError> {
         let decompressed = decompress(&mut reader)?;
+        use std::io::{BufReader, BufRead};
         let mut reader = BufReader::new(decompressed.as_slice());
 
         let mut json = String::new();
